@@ -24,7 +24,9 @@ class JoinHandler extends Component {
 
     this.state = {
       joined: false,
+      isBackButtonClicked: false,
     };
+    this.onBackButtonEvent = this.onBackButtonEvent.bind(this);
   }
 
   componentDidMount() {
@@ -74,10 +76,31 @@ class JoinHandler extends Component {
         this.firstJoinTime = undefined;
       }
     });
+
+    window.history.pushState(null, null, window.location.pathname + window.location.search);
+    this.forceUpdate();
+    window.addEventListener('popstate', this.onBackButtonEvent);
   }
 
   componentWillUnmount() {
     this._isMounted = false;
+    window.removeEventListener('popstate', this.onBackButtonEvent);
+  }
+
+  onBackButtonEvent(e) {
+    e.preventDefault();
+    const { isBackButtonClicked } = this.state;
+    if (!isBackButtonClicked) {
+      if (window.confirm('Do you want to leave this session?')) {
+        this.setState({ isBackButtonClicked: true });
+        // back history twice as we are keeping 2 copies of same url to detect popstate change.
+        window.history.go(-1);
+      } else {
+        this.setState({ isBackButtonClicked: false });
+        // push one more copy of same url, so that we can detect pop state
+        window.history.pushState(null, null, window.location.pathname + window.location.search);
+      }
+    }
   }
 
   async fetchToken() {
